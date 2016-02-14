@@ -1,9 +1,9 @@
 var RADIUS = Math.min(window.innerWidth, window.innerHeight)/50;
 var graph = {
     "nodes": [
-        {"name": "past", "group": -1},
-        {"name": "current", "group": 0},
-        {"name": "future", "group": 1}
+        {"name": "google.com", "group": -1},
+        {"name": "facebook.com", "group": 0},
+        {"name": "stuff.com", "group": 1}
     ],
     "edges": [
         {"source": 0, "target": 1},
@@ -28,7 +28,7 @@ var svg = d3.select("body").append("svg")
 
 var drawGraph = function(graph) {
   graph.edges = graph.edges.filter(function (node) {
-    return node.weight > 5
+    return node.weight > 1
   })
 
   force
@@ -48,9 +48,22 @@ var drawGraph = function(graph) {
      .append('g')
      .classed('gnode', true);
     
-  var node = gnodes.append("circle")
-      .attr("class", "node")
-      .attr("r", RADIUS)
+  var node = gnodes
+      .append('a')
+      .attr("xlink:href", function(d) {return 'http://' + d.name })
+      .append("circle")
+      .attr("class", function (d) {
+        if (d.group == 0) {
+          return "node center-node"
+        }
+        return "node";
+      })
+      .attr("r", function(d) { 
+        if (d.group == 0) {
+          return 3*RADIUS
+        }
+        return RADIUS
+      })
       .style("fill", function(d) { return color(d.group); })
       .each(function (node) {
         if (node.group == 0) {
@@ -70,6 +83,8 @@ var drawGraph = function(graph) {
       .call(force.drag);
 
   var labels = gnodes.append("text")
+      .append('a')
+      .attr("xlink:href", function(d) {return 'http://' + d.name })
       .text(function(d) { return d.name; });
 
   force.on("tick", function() {
