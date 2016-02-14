@@ -279,6 +279,11 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                         sendResponse(response);
                     }
                 });
+
+                chrome.history.onVisited.addListener(function (result) {
+                    console.log("onVisited", result);
+                    pushVisit(result);
+                });
             });
 
         }
