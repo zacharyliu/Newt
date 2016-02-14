@@ -289,7 +289,7 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     }
                     var recentHost = getHost(prevVisit.url);
                     seenHosts.push(recentHost);
-                    newNodes.push({name: recentHost, group: 1});
+                    newNodes.push({name: recentHost, group: 0});
                     dfa(0, edges[recentHost], 0);
 
                     var response = {nodes: newNodes, edges: newEdges};
