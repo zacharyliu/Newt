@@ -61,6 +61,7 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
         var hosts = [];
 
         var prevVisit;
+        var prevVisits = [];
         function pushVisit (end) {
             var start = prevVisit;
 
@@ -75,6 +76,9 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
             if (hosts.indexOf(endHost) == -1) hosts.push(endHost);
 
             prevVisit = end;
+
+            if (prevVisits.length > 5) prevVisits.shift();
+            prevVisits.push(prevVisit);
         }
 
         function getHost(url) {
@@ -271,26 +275,48 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     var newNodes = [];
                     var seenHosts = [];
 
+                    function addLink(source, destHost, weight, group) {
+                        var seen = seenHosts.indexOf(destHost) != -1;
+                        var target = seen ? seenHosts.indexOf(destHost) : seenHosts.length;
+                        if (source != target) newEdges.push({source: source, target: target, weight: weight});
+
+                        if (!seen) {
+                            seenHosts.push(destHost);
+                            newNodes.push({name: destHost, group: group});
+                        }
+
+                        return target;
+                    }
+
                     function dfa(source, current, depth) {
                         if (depth > 5) return;
                         for (var destHost in current) {
-                            if (seenHosts.indexOf(destHost) != -1) continue;
-
                             var weight = current[destHost];
-                            if (weight > 1) {
-                                seenHosts.push(destHost);
-                                var target = seenHosts.length - 1;
-                                newNodes.push({name: destHost, group: 1});
-                                newEdges.push({source: source, target: target, weight: weight});
-                                dfa(target, edges[destHost], depth + 1);
+
+                            if (weight >= 5) {
+                                var target = addLink(source, destHost, weight, 1);
+                                if (source != target) dfa(target, edges[destHost], depth + 1);
                             }
-                            
                         }
                     }
-                    var recentHost = getHost(prevVisit.url);
-                    seenHosts.push(recentHost);
-                    newNodes.push({name: recentHost, group: 0});
-                    dfa(0, edges[recentHost], 0);
+
+                    // load past
+                    var firstHost = getHost(prevVisits[0].url);
+                    seenHosts.push(firstHost);
+                    newNodes.push({name: firstHost, group: -1});
+                    var currentTarget = 0;
+                    for (var i = 1; i < prevVisits.length - 1; i++) {
+                        var visit = prevVisits[i];
+                        var recentHost = getHost(visit.url);
+                        currentTarget = addLink(currentTarget, recentHost, 1, -1);
+                    }
+
+                    // Add link to most recent
+                    var mostRecentHost = getHost(prevVisit.url);
+                    currentTarget = addLink(currentTarget, mostRecentHost, 1, 0);
+
+                    // start search here
+                    dfa(0, edges[mostRecentHost], 0);
 
                     var response = {nodes: newNodes, edges: newEdges};
                     console.log("getGraph response", response);
@@ -317,9 +343,10 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                 chrome.history.onVisited.addListener(function (result) {
                     console.log("onVisited", result);
                     pushVisit(result);
+                    getGraph();
                 });
 
-                console.log("getGraph", getGraph());
+                getGraph();
             });
 
         }
