@@ -274,15 +274,18 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     function dfa(source, current, depth) {
                         if (depth > 5) return;
                         for (var destHost in current) {
-                            if (seenHosts.indexOf(destHost) != -1) continue;
+                            var seen = seenHosts.indexOf(destHost) != -1;
 
                             var weight = current[destHost];
                             if (weight > 1) {
-                                seenHosts.push(destHost);
-                                var target = seenHosts.length - 1;
-                                newNodes.push({name: destHost, group: 1});
+                                var target = seen ? seenHosts.indexOf(destHost) : seenHosts.length;
                                 newEdges.push({source: source, target: target, weight: weight});
-                                dfa(target, edges[destHost], depth + 1);
+
+                                if (!seen) {
+                                    seenHosts.push(destHost);
+                                    newNodes.push({name: destHost, group: 1});
+                                    dfa(target, edges[destHost], depth + 1);
+                                }
                             }
                             
                         }
@@ -316,10 +319,11 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
 
                 chrome.history.onVisited.addListener(function (result) {
                     console.log("onVisited", result);
+                    getGraph();
                     pushVisit(result);
                 });
 
-                console.log("getGraph", getGraph());
+                getGraph();
             });
 
         }
