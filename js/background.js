@@ -61,6 +61,7 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
         var hosts = [];
 
         var prevVisit;
+        var prevVisits = [];
         function pushVisit (end) {
             var start = prevVisit;
 
@@ -75,6 +76,9 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
             if (hosts.indexOf(endHost) == -1) hosts.push(endHost);
 
             prevVisit = end;
+
+            if (prevVisits.length > 5) prevVisits.shift();
+            prevVisits.push(prevVisit);
         }
 
         function getHost(url) {
@@ -271,23 +275,28 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     var newNodes = [];
                     var seenHosts = [];
 
+                    function addLink(source, destHost, weight, callback) {
+                        var seen = seenHosts.indexOf(destHost) != -1;
+                        var target = seen ? seenHosts.indexOf(destHost) : seenHosts.length;
+                        newEdges.push({source: source, target: target, weight: weight});
+
+                        if (!seen) {
+                            seenHosts.push(destHost);
+                            newNodes.push({name: destHost, group: 1});
+                            callback(target);
+                        }
+                    }
+
                     function dfa(source, current, depth) {
                         if (depth > 5) return;
                         for (var destHost in current) {
-                            var seen = seenHosts.indexOf(destHost) != -1;
-
                             var weight = current[destHost];
-                            if (weight > 1) {
-                                var target = seen ? seenHosts.indexOf(destHost) : seenHosts.length;
-                                newEdges.push({source: source, target: target, weight: weight});
 
-                                if (!seen) {
-                                    seenHosts.push(destHost);
-                                    newNodes.push({name: destHost, group: 1});
+                            if (weight > 1) {
+                                addLink(source, destHost, weight, function (target) {
                                     dfa(target, edges[destHost], depth + 1);
-                                }
+                                });
                             }
-                            
                         }
                     }
                     var recentHost = getHost(prevVisit.url);
