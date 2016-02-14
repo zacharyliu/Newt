@@ -117,6 +117,10 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
 
                 console.log(visits.length);
 
+                visits = visits.sort(function (a, b) {
+                    return a.visitTime - b.visitTime;
+                });
+
                 visits.forEach(function (item) {
                     var date = new Date(item.visitTime);
                     var obj = dateToObj(date);
@@ -276,6 +280,8 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     var seenHosts = [];
 
                     function addLink(source, destHost, weight, group) {
+                        if (destHost.length == 0) return source;
+                        
                         var seen = seenHosts.indexOf(destHost) != -1;
                         var target = seen ? seenHosts.indexOf(destHost) : seenHosts.length;
                         if (source != target) newEdges.push({source: source, target: target, weight: weight});
@@ -305,18 +311,19 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     seenHosts.push(firstHost);
                     newNodes.push({name: firstHost, group: -1});
                     var currentTarget = 0;
-                    for (var i = 1; i < prevVisits.length - 1; i++) {
+                    for (var i = 1; i < prevVisits.length; i++) {
                         var visit = prevVisits[i];
                         var recentHost = getHost(visit.url);
                         currentTarget = addLink(currentTarget, recentHost, 1, -1);
                     }
 
-                    // Add link to most recent
-                    var mostRecentHost = getHost(prevVisit.url);
-                    currentTarget = addLink(currentTarget, mostRecentHost, 1, 0);
+                    // Make most recent have group 0
+                    newNodes[currentTarget].group = 0;
 
                     // start search here
-                    dfa(0, edges[mostRecentHost], 0);
+                    var mostRecentHost = getHost(prevVisit.url);
+                    console.log("most recent", mostRecentHost);
+                    dfa(currentTarget, edges[mostRecentHost], 0);
 
                     var response = {nodes: newNodes, edges: newEdges};
                     console.log("getGraph response", response);
