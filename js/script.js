@@ -1,4 +1,4 @@
-var RADIUS = Math.min(window.innerWidth, window.innerHeight)/40;
+var RADIUS = Math.min(window.innerWidth, window.innerHeight)/60;
 var graph = {
     "nodes": [
         {"name": "google.com", "group": -1},
@@ -18,7 +18,7 @@ var color = d3.scale.category20();
 
 var force = d3.layout.force()
     .charge(-3000)
-    .linkDistance(RADIUS*5)
+    .linkDistance(RADIUS*20)
     .size([width, height]);
 
 var svg = d3.select("body").append("svg")
@@ -27,6 +27,7 @@ var svg = d3.select("body").append("svg")
 
 
 var drawGraph = function(graph) {
+  console.log(graph)
   /*graph.edges = graph.edges.filter(function (node) {
     return node.weight > 1
   })*/
@@ -34,6 +35,7 @@ var drawGraph = function(graph) {
   force
       .nodes(graph.nodes)
       .links(graph.edges)
+      
       .start();
 
   var link = svg.selectAll(".link")
@@ -62,7 +64,7 @@ var drawGraph = function(graph) {
         /*if (d.group == 0) {
           return 1.5*RADIUS
         }*/
-        return RADIUS*Math.log(d.weight + 2)
+        return RADIUS*Math.log(d.weight + 1)
       })
       .style("fill", function(d) { return color(d.group); })
       .each(function (node) {
