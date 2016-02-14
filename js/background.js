@@ -26,7 +26,7 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
             console.log("get_history");
             var d = new Date();
             var max_start = Date.now();
-            var min_start = d.setMonth(d.getMonth() - 1);
+            var min_start = d.setDate(d.getDate() - 7);
             // get history data
             chrome.history.search({
                 text: "",
@@ -58,6 +58,7 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
 
         var sites = {};
         var edges = {};
+        var hosts = [];
 
         var prevVisit;
         function pushVisit (end) {
@@ -70,6 +71,8 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
             if (!edges[startHost]) edges[startHost] = {};
             if (!edges[startHost][endHost]) edges[startHost][endHost] = 0;
             edges[startHost][endHost]++;
+
+            if (hosts.indexOf(endHost) == -1) hosts.push(endHost);
 
             prevVisit = end;
         }
@@ -124,6 +127,7 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                 });
 
                 prevVisit = visits[0];
+                hosts.push(getHost(visits[0].url));
                 for (var i = 1; i < visits.length; i++) {
                     var end = visits[i];
                     pushVisit(end);
@@ -258,7 +262,6 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     } else if (request.action == "getWeather") {
                         sendResponse(weatherData);
                     } else if (request.action == "getGraph") {
-                        var hosts = Object.keys(edges);
                         var nodes = [];
                         var hostsToGroup = {};
                         for (var i = 0; i < hosts.length; i++) {
@@ -271,13 +274,18 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                             var destHosts = edges[hosts[i]];
                             for (var destHost in destHosts) {
                                 var weight = destHosts[destHost];
-                                newEdges.push({from: hostsToGroup[hosts[i]], to: hostsToGroup[destHost], weight: weight});
+                                newEdges.push({source: hostsToGroup[hosts[i]], target: hostsToGroup[destHost], weight: weight});
                             }
                         }
                         var response = {nodes: nodes, edges: newEdges};
                         console.log("getGraph response", response);
                         sendResponse(response);
                     }
+                });
+
+                chrome.history.onVisited.addListener(function (result) {
+                    console.log("onVisited", result);
+                    pushVisit(result);
                 });
             });
 
