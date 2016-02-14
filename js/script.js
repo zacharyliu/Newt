@@ -1,4 +1,4 @@
-var RADIUS = Math.min(window.innerWidth, window.innerHeight)/60;
+var RADIUS = Math.min(window.innerWidth, window.innerHeight)/50;
 var graph = {
     "nodes": [
         {"name": "google.com", "group": -1},
@@ -35,7 +35,7 @@ var drawGraph = function(graph) {
   force
       .nodes(graph.nodes)
       .links(graph.edges)
-      
+
       .start();
 
   var link = svg.selectAll(".link")
@@ -64,7 +64,7 @@ var drawGraph = function(graph) {
         /*if (d.group == 0) {
           return 1.5*RADIUS
         }*/
-        return RADIUS*Math.log(d.weight + 1)
+        return RADIUS*Math.log(d.weight + 2)
       })
       .style("fill", function(d) { return color(d.group); })
       .each(function (node) {

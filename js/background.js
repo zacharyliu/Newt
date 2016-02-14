@@ -280,13 +280,14 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     var seenHosts = [];
 
                     function addLink(source, destHost, weight, group) {
+                        if (destHost == "www.google.com") return source;
                         if (destHost.length == 0) return source;
                         
                         var seen = seenHosts.indexOf(destHost) != -1;
                         var target = seen ? seenHosts.indexOf(destHost) : seenHosts.length;
-                        if (source != target) newEdges.push({source: source, target: target, weight: weight});
-
+                        
                         if (!seen) {
+                            if (source != target) newEdges.push({source: source, target: target, weight: weight});
                             seenHosts.push(destHost);
                             newNodes.push({name: destHost, group: group});
                         }
@@ -295,11 +296,14 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     }
 
                     function dfa(source, current, depth) {
+                        if (newEdges.length > 500) {
+                            //return;
+                        }
                         if (depth > 5) return;
                         for (var destHost in current) {
                             var weight = current[destHost];
 
-                            if (weight >= 5) {
+                            if (weight >= 3) {
                                 var target = addLink(source, destHost, weight, 1);
                                 if (source != target) dfa(target, edges[destHost], depth + 1);
                             }
