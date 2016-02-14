@@ -1,4 +1,4 @@
-var RADIUS = Math.min(window.innerWidth, window.innerHeight)/50;
+var RADIUS = Math.min(window.innerWidth, window.innerHeight)/40;
 var graph = {
     "nodes": [
         {"name": "google.com", "group": -1},
@@ -17,7 +17,7 @@ var width = window.innerWidth,
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-1000)
+    .charge(-2000)
     .linkDistance(RADIUS*5)
     .size([width, height]);
 
