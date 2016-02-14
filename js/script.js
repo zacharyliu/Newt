@@ -17,7 +17,7 @@ var width = window.innerWidth,
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-2000)
+    .charge(-3000)
     .linkDistance(RADIUS*5)
     .size([width, height]);
 
@@ -27,9 +27,9 @@ var svg = d3.select("body").append("svg")
 
 
 var drawGraph = function(graph) {
-  graph.edges = graph.edges.filter(function (node) {
+  /*graph.edges = graph.edges.filter(function (node) {
     return node.weight > 1
-  })
+  })*/
 
   force
       .nodes(graph.nodes)
@@ -59,10 +59,10 @@ var drawGraph = function(graph) {
         return "node";
       })
       .attr("r", function(d) { 
-        if (d.group == 0) {
-          return 3*RADIUS
-        }
-        return RADIUS
+        /*if (d.group == 0) {
+          return 1.5*RADIUS
+        }*/
+        return RADIUS*Math.log(d.weight + 2)
       })
       .style("fill", function(d) { return color(d.group); })
       .each(function (node) {
