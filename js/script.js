@@ -33,7 +33,7 @@ var drawGraph = function(graph) {
       .start();
 
   var link = svg.selectAll(".link")
-      .data(graph.links)
+      .data(graph.edges)
     .enter().append("line")
       .attr("class", "link")
       .style("stroke-width", function(d) { return Math.sqrt(d.value); });
@@ -70,10 +70,10 @@ var drawGraph = function(graph) {
       .text(function(d) { return d.name; });
 
   force.on("tick", function() {
-    link.attr("x1", function(d) { return d.from.x; })
-        .attr("y1", function(d) { return d.from.y; })
-        .attr("x2", function(d) { return d.to.x; })
-        .attr("y2", function(d) { return d.to.y; });
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
 
     gnodes.attr("transform", function(d) { 
         return 'translate(' + [d.x, d.y] + ')'; 
