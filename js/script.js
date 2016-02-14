@@ -1,4 +1,4 @@
-var RADIUS = Math.min(window.innerWidth, window.innerHeight)/20;
+var RADIUS = Math.min(window.innerWidth, window.innerHeight)/50;
 var graph = {
     "nodes": [
         {"name": "past", "group": -1},
@@ -17,7 +17,7 @@ var width = window.innerWidth,
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-120)
+    .charge(-1000)
     .linkDistance(RADIUS*5)
     .size([width, height]);
 
@@ -27,6 +27,10 @@ var svg = d3.select("body").append("svg")
 
 
 var drawGraph = function(graph) {
+  graph.edges = graph.edges.filter(function (node) {
+    return node.weight > 5
+  })
+
   force
       .nodes(graph.nodes)
       .links(graph.edges)
@@ -84,5 +88,5 @@ var drawGraph = function(graph) {
 chrome.runtime.sendMessage({action: "getGraph"}, function (response) {
     console.log("getGraph response", response);
 
-    drawGraph(graph);
+    drawGraph(response);
 });
