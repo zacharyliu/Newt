@@ -20,51 +20,10 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
         var weatherData;
         var linkData;
 
-        if (current_token) {
-            chrome.identity.removeCachedAuthToken({token: current_token}, function () {
-            });
-
-            // Make a request to revoke token in the server
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'https://accounts.google.com/o/oauth2/revoke?token=' +
-            current_token);
-            xhr.send();
-
-            current_token = 0;
-            console.log("Revoked token.")
-        }
-
-        chrome.identity.getAuthToken({'interactive': true}, function (token) {
-            if (chrome.runtime.lastError) {
-                console.log(chrome.runtime.lastError);
-                //changeState(STATE_START);
-            } else {
-                current_token = token;
-                console.log('Token acquired:' + current_token +
-                '. See chrome://identity-internals for details.');
-
-                //GET the user's email
-                $.ajax({
-                    method: 'GET',
-                    url: "https://www.googleapis.com/oauth2/v1/userinfo",
-                    data: {
-                        "alt": "json",
-                        "access_token": current_token
-                    },
-                    success: function (data) {
-                        user_data = data;
-                        chrome.storage.sync.set(user_data, function () {
-                            console.log(user_data);
-                            get_history();
-                            get_all_cal_events();
-                        })
-                    }
-                });
-
-            }
-        });
+        var re = /^(?:ftp|https?):\/\/(?:[^@:\/]*@)?([^:\/]+)/;
 
         function get_history(callback) {
+            console.log("get_history");
             var d = new Date();
             var max_start = Date.now();
             var min_start = d.setMonth(d.getMonth() - 1);
@@ -97,94 +56,31 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
             });
         }
 
+        var sites = {};
+        var edges = {};
 
-        function get_cal_list(callback) {
+        var prevVisit;
+        function pushVisit (end) {
+            var start = prevVisit;
 
-            $.ajax({
-                method: 'GET',
-                url: "https://www.googleapis.com/calendar/v3/users/me/calendarList",
-                data: {
-                    "alt": "json",
-                    "access_token": current_token,
-                    "max_results": 10//max=250
+            // create link
+            var startHost = getHost(start.url);
+            var endHost = getHost(end.url);
 
-                },
-                success: function (cal_list) {
-                    //console.log(cal_list);
-                    callback(cal_list, null);
+            if (!edges[startHost]) edges[startHost] = {};
+            if (!edges[startHost][endHost]) edges[startHost][endHost] = 0;
+            edges[startHost][endHost]++;
 
-                },
-                error: function (err) {
-                    console.log(err);
-                    callback(null, err);
-                }
-            });
+            prevVisit = end;
         }
 
-        function get_all_cal_events() {
-
-            var d = new Date();
-            var max_start = d.setMonth(d.getMonth() + 1);
-            max_start = new Date(max_start).toISOString();
-            var min_start = d.setMonth(d.getMonth() - 2);
-            min_start = new Date(min_start).toISOString();
-
-            get_cal_list(function (calendar_list, err) {
-                if (err) console.log(err);
-
-                calendars = calendars || calendar_list;
-                //console.log(calendars);
-                async.eachSeries(calendars.items, function (cal, callback) {
-                    var cal_id = cal.id;
-                    $.ajax({
-                        method: 'GET',
-                        url: "https://www.googleapis.com/calendar/v3/calendars/" + encodeURIComponent(cal_id) + "/events",
-                        data: {
-                            "alt": "json",
-                            "access_token": current_token,
-                            "max_results": 2500,
-                            "timeMin": min_start,
-                            "timeMax": max_start,
-                            "singleEvents": true
-                        },
-                        success: function (cal_list) {
-                            //console.log(cal_list);
-                            events = events.concat(cal_list.items);
-                        },
-                        complete: function () {
-                            callback();
-                        }
-
-                    });
-
-                }, function () {
-                    //console.log(events);
-                    var filtered_events = events.filter(function (evt) {
-                        //if recurring events expanded
-                        return evt.recurringEventId !== undefined;
-
-                        //if recurring events not expanded
-                        //return evt.recurrence !== undefined;
-                    });
-                    console.log("filtered all events");
-                    console.log(filtered_events);
-                    async.eachSeries(filtered_events, function (evt, callback) {
-                        //console.log(evt.start.dateTime);
-                        var start = Date.parse(evt.start.dateTime || evt.start.date);
-                        var end = Date.parse(evt.end.dateTime || evt.end.date);
-                        if (start < end) {
-                            //console.log([start, end, evt.summary]);
-                            itree.add([start / 10000, end / 10000, evt.summary]);
-                        }
-                        callback();
-                    }, function () {
-                        //console.log(itree.search(142176470,142196470));
-                        //console.log(itree);
-                    });
-
-                });
-
-            });
+        function getHost(url) {
+            var result = url.match(re);
+            if (result && result.length > 1) {
+                return result[1];
+            } else {
+                return "";
+            }
         }
 
         function init() {
@@ -211,9 +107,8 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
 
             get_history(function (err, visits) {
                 console.log("init()", "Got history data");
-                var re = /^(?:ftp|https?):\/\/(?:[^@:\/]*@)?([^:\/]+)/;
 
-                var sites = {};
+                console.log(visits.length);
 
                 visits.forEach(function (item) {
                     var date = new Date(item.visitTime);
@@ -228,14 +123,13 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     sites[host].push(obj);
                 });
 
-                function getHost(url) {
-                    var result = url.match(re);
-                    if (result && result.length > 1) {
-                        return result[1];
-                    } else {
-                        return "";
-                    }
+                prevVisit = visits[0];
+                for (var i = 1; i < visits.length; i++) {
+                    var end = visits[i];
+                    pushVisit(end);
                 }
+
+                console.log(edges);
 
                 function dateToObj(date) {
                     var obj = {};
@@ -347,10 +241,10 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
 
                 }
 
-                setInterval(function () {
-                    getLinks();
-                }, 60 * 1000);
-                getLinks();
+                // setInterval(function () {
+                //     getLinks();
+                // }, 60 * 1000);
+                // getLinks();
 
                 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     console.log("init()", "Incoming message", request, sender);
@@ -363,6 +257,26 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                         sendResponse(linkData);
                     } else if (request.action == "getWeather") {
                         sendResponse(weatherData);
+                    } else if (request.action == "getGraph") {
+                        var hosts = Object.keys(edges);
+                        var nodes = [];
+                        var hostsToGroup = {};
+                        for (var i = 0; i < hosts.length; i++) {
+                            nodes.push({name: hosts[i], group: i});
+                            hostsToGroup[hosts[i]] = i;
+                        }
+
+                        var newEdges = [];
+                        for (var i = 0; i < hosts.length; i++) {
+                            var destHosts = edges[hosts[i]];
+                            for (var destHost in destHosts) {
+                                var weight = destHosts[destHost];
+                                newEdges.push({from: hostsToGroup[hosts[i]], to: hostsToGroup[destHost], weight: weight});
+                            }
+                        }
+                        var response = {nodes: nodes, edges: newEdges};
+                        console.log("getGraph response", response);
+                        sendResponse(response);
                     }
                 });
             });

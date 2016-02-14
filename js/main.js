@@ -19,10 +19,14 @@ function updateLinks(refresh) {
     });
 }
 
+chrome.runtime.sendMessage({action: "getGraph"}, function (response) {
+    console.log("getGraph response", response);
+});
+
 var lastRendered;
 function renderLinks(response) {
     lastRendered = Date.now();
-    console.log(response);
+    console.log("renderLinks response", response);
     $("#suggestions ul").html("");
     for (let i = 0; i < response.length; i++) {
         var colors = [];
