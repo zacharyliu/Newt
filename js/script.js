@@ -1,11 +1,11 @@
-var RADIUS = Math.min(window.innerWidth, window.innerHeight)/20;
+var RADIUS = Math.min(window.innerWidth, window.innerHeight)/50;
 var graph = {
     "nodes": [
         {"name": "past", "group": -1},
         {"name": "current", "group": 0},
         {"name": "future", "group": 1}
     ],
-    "links": [
+    "edges": [
         {"source": 0, "target": 1},
         {"source": 1, "target": 2}
     ]
@@ -17,7 +17,7 @@ var width = window.innerWidth,
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-120)
+    .charge(-1000)
     .linkDistance(RADIUS*5)
     .size([width, height]);
 
@@ -27,6 +27,10 @@ var svg = d3.select("body").append("svg")
 
 
 var drawGraph = function(graph) {
+  graph.edges = graph.edges.filter(function (node) {
+    return node.weight > 5
+  })
+
   force
       .nodes(graph.nodes)
       .links(graph.edges)
@@ -49,7 +53,6 @@ var drawGraph = function(graph) {
       .attr("r", RADIUS)
       .style("fill", function(d) { return color(d.group); })
       .each(function (node) {
-        console.log(node);
         if (node.group == 0) {
             node.fixed = true;
             node.px = width / 2;
