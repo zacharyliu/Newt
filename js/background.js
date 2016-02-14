@@ -250,6 +250,54 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                 // }, 60 * 1000);
                 // getLinks();
 
+                function getGraph() {
+                    // var nodes = [];
+                    // var hostsToGroup = {};
+                    // for (var i = 0; i < hosts.length; i++) {
+                    //     nodes.push({name: hosts[i], group: i});
+                    //     // hostsToGroup[hosts[i]] = i;
+                    // }
+
+                    var newEdges = [];
+
+                    // for (var i = 0; i < hosts.length; i++) {
+                    //     var destHosts = edges[hosts[i]];
+                    //     for (var destHost in destHosts) {
+                    //         var weight = destHosts[destHost];
+                    //         newEdges.push({source: hostsToGroup[hosts[i]], target: hostsToGroup[destHost], weight: weight});
+                    //     }
+                    // }
+
+                    var newNodes = [];
+                    var seenHosts = [];
+
+                    function dfa(source, current, depth) {
+                        if (depth > 5) return;
+                        for (var destHost in current) {
+                            if (seenHosts.indexOf(destHost) != -1) continue;
+
+                            var weight = current[destHost];
+                            if (weight > 1) {
+                                seenHosts.push(destHost);
+                                var target = seenHosts.length - 1;
+                                newNodes.push({name: destHost, group: 1});
+                                newEdges.push({source: source, target: target, weight: weight});
+                                dfa(target, edges[destHost], depth + 1);
+                            }
+                            
+                        }
+                    }
+                    var recentHost = getHost(prevVisit.url);
+                    seenHosts.push(recentHost);
+                    newNodes.push({name: recentHost, group: 1});
+                    dfa(0, edges[recentHost], 0);
+
+                    var response = {nodes: newNodes, edges: newEdges};
+                    console.log("getGraph response", response);
+
+                    return response;
+                }
+
                 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     console.log("init()", "Incoming message", request, sender);
                     if (request.action == "getLinks") {
@@ -262,24 +310,7 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     } else if (request.action == "getWeather") {
                         sendResponse(weatherData);
                     } else if (request.action == "getGraph") {
-                        var nodes = [];
-                        var hostsToGroup = {};
-                        for (var i = 0; i < hosts.length; i++) {
-                            nodes.push({name: hosts[i], group: i});
-                            hostsToGroup[hosts[i]] = i;
-                        }
-
-                        var newEdges = [];
-                        for (var i = 0; i < hosts.length; i++) {
-                            var destHosts = edges[hosts[i]];
-                            for (var destHost in destHosts) {
-                                var weight = destHosts[destHost];
-                                newEdges.push({source: hostsToGroup[hosts[i]], target: hostsToGroup[destHost], weight: weight});
-                            }
-                        }
-                        var response = {nodes: nodes, edges: newEdges};
-                        console.log("getGraph response", response);
-                        sendResponse(response);
+                        sendResponse(getGraph());
                     }
                 });
 
@@ -287,6 +318,8 @@ requirejs(['async', 'node/interval-tree/IntervalTree', 'node/alike/main'],
                     console.log("onVisited", result);
                     pushVisit(result);
                 });
+
+                console.log("getGraph", getGraph());
             });
 
         }
