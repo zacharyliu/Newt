@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>New Tab</title>
+<link rel="stylesheet" type="text/css" href="css/main.min.css">
+</head>
+<body>
+  <div class="gradient top-gradient" id="top-gradient"></div>
+  <div id="scroll-wrapper">
+    <div class="gradient top-gradient" id="top-clock-gradient"></div>
+    <div id="topbar">
+      <div id="time-wrapper">
+        <div class="weather"><div><img id="weather-icon" /><span id="temp"></span></div><div id="location"></div></div>
+        <div id="time">
+          <div class="number" id="h1"></div>
+          <div class="number" id="h2"></div>
+          <div class="number">:</div>
+          <div class="number" id="m1"></div>
+          <div class="number" id="m2"></div>
+          <div class="number">:</div>
+          <div class="number" id="s1"></div>
+          <div class="number" id="s2"></div>
+
+
+        </div>
+        <div id="time_hidden">
+          <div class="number" id="h1_hidden"></div>
+          <div class="number" id="h2_hidden"></div>
+          <div class="number">:</div>
+          <div class="number" id="m1_hidden"></div>
+          <div class="number" id="m2_hidden"></div>
+          <div class="number">:</div>
+          <div class="number" id="s1_hidden"></div>
+          <div class="number" id="s2_hidden"></div>
+        </div>
+
+        <div class="date" id="date">Sunday<br />Jan 22</div>
+      </div>
+
+      <div class="name"><span id="greeting">Good afternoon</span>, <span id="name"></span> :)</div>
+    </div>
+    <div class="gradient bottom-gradient" id="bottom-clock-gradient"></div>
+    <hr id="divider" />
+    <div id="suggestions">
+      <ul>
+      </ul>
+    </div>
+  </div>
+  <div class="gradient bottom-gradient" id="bottom-gradient"></div>
+</body>
+
+<script src="js/jquery-2.1.3.min.js"></script>
+<script src="js/jquery.mousewheel.min.js"></script>
+<script src="js/jquery.simplr.smoothscroll.min.js"></script>
+<script src="js/main.js"></script>
+</html>
